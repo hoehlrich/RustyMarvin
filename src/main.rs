@@ -29,6 +29,11 @@ impl EventHandler for Handler
                 eprintln!("Error sending message: {:?}", why);
             }
         }
+        else if msg.content.starts_with("!bing") {
+            if let Err(why) = msg.channel_id.say(&ctx.http, "Bong!").await {
+                eprintln!("Error sending message: {:?}", why);
+            }
+        }
     }
 
     async fn ready(&self, _ctx: Context, ready: Ready) {
