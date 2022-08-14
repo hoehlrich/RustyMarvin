@@ -42,7 +42,6 @@ impl EventHandler for Handler
 
         if !self.is_loop_running.load(Ordering::Relaxed) {
             let ctx1 = Arc::clone(&ctx);
-
             tokio::spawn(async move {
                 loop {
                     log_system_load(Arc::clone(&ctx1)).await;
@@ -62,9 +61,6 @@ impl EventHandler for Handler
             tokio::spawn(async move {
                 let mut colors = vec!["FA2D11", "F08A22", "F5F503", "15A60D", "23A0FA", "0D0DA6", "9520FB"];
                 loop {
-                    let guild = ctx.cache.guilds()[0];
-                    let role = &guild.roles(&ctx3.http).await.unwrap()[&RoleId(978088410784870400)];
-                    role.edit(&ctx3.http, |r| r.colour(u64::from_str_radix(colors[0], 16).unwrap())).await.unwrap();
                     colors.rotate_left(1);
                     tokio::time::sleep(Duration::from_secs_f64(0.1)).await;
                 }
@@ -73,6 +69,14 @@ impl EventHandler for Handler
             self.is_loop_running.swap(true, Ordering::Relaxed);
         }
     }}
+
+// async fn change_army_color(ctx: Arc<Context>) {
+//     let guild = ctx.cache.guilds()[0];
+//     let role = &guild.roles(&ctx.http).await.unwrap()[&RoleId(978088410784870400)];
+//     println!("{}", role.name);
+//     role.edit(&ctx.http, |r| r.colour(from_str_radix([0], 16).unwrap())).await.unwrap();
+//     println!("Edited colour");
+// }
 
 async fn log_system_load(ctx: Arc<Context>) {
     let cpu_load = sys_info::loadavg().unwrap();
