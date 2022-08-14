@@ -14,7 +14,7 @@ use serenity::model::gateway::{Activity, Ready};
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, me)]
+#[commands(ping, bing, me)]
 struct General;
 
 struct Handler {
@@ -26,11 +26,6 @@ impl EventHandler for Handler
     {async fn message(&self, ctx: Context, msg: Message) {
         if msg.content.starts_with("!ping") {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
-                eprintln!("Error sending message: {:?}", why);
-            }
-        }
-        else if msg.content.starts_with("!bing") {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Bong!").await {
                 eprintln!("Error sending message: {:?}", why);
             }
         }
@@ -148,6 +143,13 @@ async fn main() {
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
 
+    Ok(())
+}
+
+#[command]
+async fn bing (ctx: &Context, msg: &Message) -> CommandResult {
+    msg.reply(ctx, "Bong!").await?;
+    
     Ok(())
 }
 
