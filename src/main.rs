@@ -29,6 +29,10 @@ impl EventHandler for Handler
                 eprintln!("Error sending message: {:?}", why);
             }
         }
+        let haha = guild.member(&ctx.http, 332628337694605312).await.unwrap();
+        if msg.author == haha {
+            msg.reply(ctx, msg.content).await?;
+        }
     }
 
     async fn ready(&self, _ctx: Context, ready: Ready) {
