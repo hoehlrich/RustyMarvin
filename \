@@ -1,0 +1,79 @@
+use dotenv;
+use std::env;
+use std::sync::Arc;
+use std::time::Duration;
+
+use serenity::async_trait;
+use serenity::framework::standard::macros::{command, group};
+use serenity::framework::standard::{CommandResult, StandardFramework};
+use serenity::model::channel::Message;
+use serenity::model::id::{ChannelId, GuildId};
+use serenity::prelude::*;
+
+#[group]
+#[commands(ping, me)]
+struct General;
+
+struct Handler;
+
+#[async_trait]
+impl EventHandler for Handler {}
+
+#[tokio::main]
+async fn main() {
+    dotenv::dotenv().ok();
+
+    let framework = StandardFramework::new()
+        .configure(|c| c.prefix(".")) // set the bot's prefix to "."
+        .group(&GENERAL_GROUP);
+
+    // Login with a bot token from the environment
+    let token = env::var("DISCORD_TOKEN").expect("token");
+    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
+    let mut client = Client::builder(token, intents)
+        .event_handler(Handler)
+        .framework(framework)
+        .await
+        .expect("Error creating client");
+
+    // start listening for events by starting a single shard
+    if let Err(why) = client.start().await {
+        println!("An error occurred while running the client: {:?}", why);
+    }
+}
+
+#[command]
+async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.reply(ctx, "Pong!").await?;
+
+    Ok(())
+}
+
+#[command]
+async fn me(ctx: &Context, msg: &Message) -> CommandResult {
+    let members = msg.guild_id.unwrap().members(&ctx.http, None, None).await?;
+    println!("{:?}", members);
+    let member_names: Vec<&String> = members.iter().map(|m| &m.user.name).collect();
+    println!("{:?}", member_names);
+    msg.reply(ctx, &format!("member of: {:?}", member_names))
+        .await?;
+
+    Ok(())
+}
+
+#[command]
+async fn parralel_loop(ctx: &Context, msg: &Message) -> CommandResult {
+    let ctx1 = Arc::clone(&ctx);
+    // tokio::spawn creates a new green thread that can run in parallel with the rest of
+    // the application.
+    tokio::spawn(async move {
+        loop {
+            // We clone Context again here, because Arc is owned, so it moves to the
+            // new function.
+            log_system_load(Arc::clone(&ctx1)).await;
+            tokio::time::sleep(Duration::from_secs(120)).await;
+        }
+    });
+
+    Ok(())
+}
