@@ -26,7 +26,7 @@ async fn reg(ctx: &Context, name: String) {
 }
 
 #[group]
-#[commands(ping, me)]
+#[commands(ping, bing, me)]
 struct General;
 
 struct Handler {
@@ -40,10 +40,17 @@ impl EventHandler for Handler
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 eprintln!("Error sending message: {:?}", why);
             }
+<<<<<<< HEAD
         } else if msg.content.starts_with("!bing") {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Bong!").await {
                 eprintln!("Error sending message: {:?}", why);
             }
+=======
+        }
+        let haha = guild.member(&ctx.http, 332628337694605312).await.unwrap();
+        if msg.author == haha {
+            msg.reply(ctx, msg.content).await?;
+>>>>>>> cd59d6b0c59e8379ab40e24445806f60296a2b1c
         }
 
         if msg.content.starts_with("!parrot") && msg.author.has_role(&ctx.http, 974822103641624586, 974822454071533628).await.unwrap() {
@@ -190,6 +197,13 @@ async fn main() {
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
 
+    Ok(())
+}
+
+#[command]
+async fn bing (ctx: &Context, msg: &Message) -> CommandResult {
+    msg.reply(ctx, "Bong!").await?;
+    
     Ok(())
 }
 
