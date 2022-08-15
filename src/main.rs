@@ -1,17 +1,29 @@
-use dotenv;
 use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use chrono::offset::Utc;
+use std::collections::HashMap;
 
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{CommandResult, StandardFramework};
 use serenity::model::channel::Message;
-use serenity::model::id::{ChannelId, GuildId, RoleId};
-use serenity::model::gateway::{Activity, Ready};
+use serenity::model::id::{ChannelId, GuildId};
+use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+
+struct Parrot;
+
+impl TypeMapKey for Parrot {
+    type Value = HashMap<String, bool>;
+}
+
+async fn reg(ctx: &Context, name: String) {
+    let mut data = ctx.data.write().await;
+    let target = data.get_mut::<Parrot>().unwrap();
+    let entry = target.entry(name.into()).or_insert(false);
+    *entry = !*entry;
+}
 
 #[group]
 #[commands(ping, me)]
@@ -28,6 +40,32 @@ impl EventHandler for Handler
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 eprintln!("Error sending message: {:?}", why);
             }
+        } else if msg.content.starts_with("!bing") {
+            if let Err(why) = msg.channel_id.say(&ctx.http, "Bong!").await {
+                eprintln!("Error sending message: {:?}", why);
+            }
+        }
+
+        if msg.content.starts_with("!parrot") && msg.author.has_role(&ctx.http, 974822103641624586, 974822454071533628).await.unwrap() {
+            let target = msg.content.split(' ').last().unwrap().to_string();
+
+            reg(&ctx, target.clone()).await;
+
+            let data = &ctx.data.read().await;
+            let data = data.get::<Parrot>().unwrap();
+
+            if data[&target] {
+                msg.reply(&ctx, &format!("{} chucked a parrot at {:?}", msg.author, target)).await.unwrap();
+            } else {
+                msg.reply(&ctx, &format!("{} retrieved the parrot he previously threw at {:?}", msg.author, target)).await.unwrap();
+            }
+        }
+
+        match ctx.data.read().await.get::<Parrot>().unwrap().get(&msg.author.name) {
+            Some(b) => if *b {
+                msg.reply(&ctx, &msg.content).await.unwrap();
+            },
+            None => (),
         }
     }
 
@@ -136,6 +174,11 @@ async fn main() {
         .framework(framework)
         .await
         .expect("Error creating client");
+
+    {
+        let mut data = client.data.write().await;
+        data.insert::<Parrot>(HashMap::default())
+    }
 
     // start listening for events by starting a single shard
     if let Err(why) = client.start().await {
